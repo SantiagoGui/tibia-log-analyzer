@@ -1,14 +1,17 @@
 import re
+import json
 from collections import defaultdict
 
-unknow_total_damage = 0
-total_damage = 0
-hit_points_healed = 0
-experience_gained = 0
-mana_gained = 0
-damage_taken_by_creature_kind = defaultdict(int)
-loot_items = defaultdict(int)
-black_knight_total_health = 0
+output = {
+    "unknow_total_damage": 0,
+    "total_damage": 0,
+    "hit_points_healed": 0,
+    "experience_gained": 0,
+    "mana_gained": 0,
+    "damage_taken_by_creature_kind": defaultdict(int),
+    "loot_items": defaultdict(int),
+    "black_knight_life": 0
+}
 
 with open("logfile.txt", "r") as arquivo:
     for line in arquivo:
@@ -18,31 +21,31 @@ with open("logfile.txt", "r") as arquivo:
                 if len(splitted_line) == 12:
                     creature_hit = int(splitted_line[3])
                     creature_name = splitted_line[-1].replace(".", "")
-                    total_damage += creature_hit
+                    output["total_damage"] += creature_hit
                 elif len(splitted_line) == 13:
                     creature_hit = int(splitted_line[3])
                     creature_name = (splitted_line[-2] + " " + splitted_line[-1]).replace(".", "")
-                    total_damage += creature_hit
-                damage_taken_by_creature_kind[creature_name] += creature_hit
+                    output["total_damage"] += creature_hit
+                output["damage_taken_by_creature_kind"][creature_name] += creature_hit
             else:
                 unknow_damage = int(splitted_line[3])
-                total_damage += unknow_damage
-                unknow_total_damage += unknow_damage
+                output["total_damage"] += unknow_damage
+                output["unknow_total_damage"] += unknow_damage
 
         if re.search("You healed", line):
             splited_line = line.strip().split(" ")
-            hit_points_healed += int(splited_line[5])
-
-        if re.search("A Black Knight loses", line):
-            splited_line = line.strip().split(" ")
-            black_knight_total_health += int(splited_line[5])
+            output["hit_points_healed"] += int(splited_line[5])
 
         if re.search("You gained", line):
             splited_line = line.strip().split(" ")
             if len(splited_line) == 6:
-                experience_gained += int(splited_line[3])
+                output["experience_gained"] += int(splited_line[3])
             else:
-                mana_gained += int(splited_line[3])
+                output["mana_gained"] += int(splited_line[3])
+
+        if re.search("A Black Knight loses", line):
+            splited_line = line.strip().split(" ")
+            output["black_knight_life"] += int(splited_line[5])
 
         loot_match = re.search("Loot of a (\w+): ([\w\s',]+)\.", line)
         if loot_match:
@@ -64,15 +67,8 @@ with open("logfile.txt", "r") as arquivo:
                     name = name.strip()
                     if name.endswith('s') and name[:-1]:
                         name = name[:-1]
-                    loot_items[name] += amount
+                    output["loot_items"][name] += amount
 
-
-print("LOOT: " + str(loot_items))
-print("XP: " + str(experience_gained))
-print("MANA :" + str(mana_gained))
-print("Damage: " + str(total_damage))
-print("hitpoint :" + str(hit_points_healed))
-print("creature kind: " + str(damage_taken_by_creature_kind))
-print("UNKNOW TOTAL DAMAGE: " + str(unknow_total_damage))
-print("knight Total health : " + str(black_knight_total_health))
+json = json.dumps(output, indent=4)
+print(json)
 
