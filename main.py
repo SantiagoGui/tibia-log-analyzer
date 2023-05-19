@@ -8,6 +8,7 @@ experience_gained = 0
 mana_gained = 0
 damage_taken_by_creature_kind = defaultdict(int)
 loot_items = defaultdict(int)
+black_knight_total_health = 0
 
 with open("logfile.txt", "r") as arquivo:
     for line in arquivo:
@@ -31,6 +32,10 @@ with open("logfile.txt", "r") as arquivo:
         if re.search("You healed", line):
             splited_line = line.strip().split(" ")
             hit_points_healed += int(splited_line[5])
+
+        if re.search("A Black Knight loses", line):
+            splited_line = line.strip().split(" ")
+            black_knight_total_health += int(splited_line[5])
 
         if re.search("You gained", line):
             splited_line = line.strip().split(" ")
@@ -61,10 +66,6 @@ with open("logfile.txt", "r") as arquivo:
                         name = name[:-1]
                     loot_items[name] += amount
 
-'''
-fazer os extras
-passar as variaveis pra um dic dicionario ou jason
-'''
 
 print("LOOT: " + str(loot_items))
 print("XP: " + str(experience_gained))
@@ -73,3 +74,5 @@ print("Damage: " + str(total_damage))
 print("hitpoint :" + str(hit_points_healed))
 print("creature kind: " + str(damage_taken_by_creature_kind))
 print("UNKNOW TOTAL DAMAGE: " + str(unknow_total_damage))
+print("knight Total health : " + str(black_knight_total_health))
+
