@@ -1,73 +1,82 @@
-import re
 import json
 from collections import defaultdict
 
 output = {
-    "unknow_total_damage": 0,
-    "total_damage": 0,
-    "hit_points_healed": 0,
-    "experience_gained": 0,
-    "mana_gained": 0,
-    "damage_taken_by_creature_kind": defaultdict(int),
-    "loot_items": defaultdict(int),
-    "black_knight_life": 0
+    "hitpointsHealed": 0,
+    "experienceGained": 0,
+    "manaGained": 0,
+    "damageTaken": {
+        "total": 0,
+        "unknowOrigins": 0,
+        "byCreatureKind": defaultdict(int)
+    },
+    "loot": defaultdict(int),
+    "creaturesTotalLife": {
+        "blackKnight": 0
+    }
 }
 
 with open("logfile.txt", "r") as arquivo:
     for line in arquivo:
-        if re.search("You lose", line):
-            splitted_line = line.strip().split(" ")
+        splitted_line = line.strip().split(" ")
+        if "You" in splitted_line and "lose" in splitted_line:
             if len(splitted_line) > 5:
                 if len(splitted_line) == 12:
                     creature_hit = int(splitted_line[3])
                     creature_name = splitted_line[-1].replace(".", "")
-                    output["total_damage"] += creature_hit
+                    output["damageTaken"]["total"] += creature_hit
                 elif len(splitted_line) == 13:
                     creature_hit = int(splitted_line[3])
                     creature_name = (splitted_line[-2] + " " + splitted_line[-1]).replace(".", "")
-                    output["total_damage"] += creature_hit
-                output["damage_taken_by_creature_kind"][creature_name] += creature_hit
+                    output["damageTaken"]["total"] += creature_hit
+                output["damageTaken"]["byCreatureKind"][creature_name] += creature_hit
             else:
                 unknow_damage = int(splitted_line[3])
-                output["total_damage"] += unknow_damage
-                output["unknow_total_damage"] += unknow_damage
+                output["damageTaken"]["total"] += unknow_damage
+                output["damageTaken"]["unknowOrigins"] += unknow_damage
+        if "You" in splitted_line and "healed" in splitted_line:
+            output["hitpointsHealed"] += int(splitted_line[5])
 
-        if re.search("You healed", line):
-            splited_line = line.strip().split(" ")
-            output["hit_points_healed"] += int(splited_line[5])
-
-        if re.search("You gained", line):
-            splited_line = line.strip().split(" ")
-            if len(splited_line) == 6:
-                output["experience_gained"] += int(splited_line[3])
+        if "You" in splitted_line and "gained" in splitted_line:
+            if len(splitted_line) == 6:
+                output["experienceGained"] += int(splitted_line[3])
             else:
-                output["mana_gained"] += int(splited_line[3])
+                output["manaGained"] += int(splitted_line[3])
+        if "A Black Knight loses" in line:
+            output["creaturesTotalLife"]["blackKnight"] += int(splitted_line[5])
 
-        if re.search("A Black Knight loses", line):
-            splited_line = line.strip().split(" ")
-            output["black_knight_life"] += int(splited_line[5])
-
-        loot_match = re.search("Loot of a (\w+): ([\w\s',]+)\.", line)
-        if loot_match:
-            items = loot_match.group(2).split(', ')
-            for item in items:
-                if re.search('nothing', item) is None:
-
-                    item_parts = item.strip().split(' ', 1)
-                    if len(item_parts) == 2:
-                        amount, name = item_parts
-                    else:
-                        amount = '1'
-                        name = item_parts[0]
-                    amount = amount.strip() if amount else '1'
-                    name = name.strip() if name else item
-                    amount = int(amount) if amount.isdigit() else 1
-                    if name.startswith('a '):
-                        name = name[2:]
-                    name = name.strip()
-                    if name.endswith('s') and name[:-1]:
-                        name = name[:-1]
-                    output["loot_items"][name] += amount
+        splitted_line = line.strip().split(":")
+        if len(splitted_line) > 1:
+            if "Loot" in splitted_line[1]:
+                items = splitted_line[2].strip().split(",")
+                for item in items:
+                    if "nothing" not in item:
+                        item_parts = item.strip().split(' ')
+                        if len(item_parts) >= 3:
+                            amount = 1
+                            if item_parts[0].isdigit():
+                                amount = int(item_parts[0])
+                                item_parts.pop(0)
+                            if item_parts[0] == 'a':
+                                amount = 1
+                                item_parts.pop(0)
+                            name = " ".join(item_parts).replace(".", "")
+                        elif len(item_parts) == 2:
+                            if item_parts[0].isdigit():
+                                amount = int(item_parts[0])
+                                item_parts.pop(0)
+                            else:
+                                amount = 1
+                            name = " ".join(item_parts).replace(".", "")
+                        elif len(item_parts) == 1:
+                            amount = 1
+                            name = item_parts[0].replace(".", "")
+                        if name.startswith('a '):
+                            name = name[2:]
+                            name = name.strip()
+                        if name.endswith('s') and name[:-1]:
+                            name = name[:-1]
+                        output["loot"][name] += amount
 
 json = json.dumps(output, indent=4)
 print(json)
