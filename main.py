@@ -19,6 +19,7 @@ output = {
 with open("logfile.txt", "r") as arquivo:
     for line in arquivo:
         splitted_line = line.strip().split(" ")
+        #Extracting damage and damage_by_creature
         if "You" in splitted_line and "lose" in splitted_line:
             if len(splitted_line) > 5:
                 if len(splitted_line) == 12:
@@ -34,17 +35,21 @@ with open("logfile.txt", "r") as arquivo:
                 unknow_damage = int(splitted_line[3])
                 output["damageTaken"]["total"] += unknow_damage
                 output["damageTaken"]["unknowOrigins"] += unknow_damage
+        #Extracting total healed by the player
         if "You" in splitted_line and "healed" in splitted_line:
             output["hitpointsHealed"] += int(splitted_line[5])
-
+        # Extracting total experience gained by the player
         if "You" in splitted_line and "gained" in splitted_line:
             if len(splitted_line) == 6:
                 output["experienceGained"] += int(splitted_line[3])
             else:
                 output["manaGained"] += int(splitted_line[3])
+        #Extracting Black Knight life
+
         if "A Black Knight loses" in line:
             output["creaturesTotalLife"]["blackKnight"] += int(splitted_line[5])
 
+        #Extracting items dropped by creatures
         splitted_line = line.strip().split(":")
         if len(splitted_line) > 1:
             if "Loot" in splitted_line[1]:
